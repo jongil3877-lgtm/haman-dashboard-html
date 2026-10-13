@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="RKG 함안센터 통합관리 시스템" />
+  <title>RKG 함안센터 통합관리 시스템</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <style>
+    :root{--navy:#0f172a;--blue:#1e3a8a;--blue2:#2563eb;--slate:#64748b;--bg:#f5f7fb;--card:#fff;--line:#e2e8f0;--green:#16a34a;--soft:#f8fafc}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Malgun Gothic",Roboto,sans-serif;background:var(--bg);color:var(--navy)}
+    .app{display:flex;min-height:100vh}.sidebar{width:252px;position:fixed;left:0;top:0;bottom:0;padding:24px 18px;background:linear-gradient(180deg,#0b1220 0%,#111c33 100%);color:#fff;overflow-y:auto;z-index:10}
+    .brand{font-size:22px;font-weight:900;margin:0}.brand-sub{font-size:12px;color:#cbd5e1;margin:6px 0 24px}.nav-btn{width:100%;display:flex;align-items:center;gap:10px;border:0;border-radius:10px;padding:12px 13px;margin:5px 0;background:transparent;color:#fff;text-align:left;font-size:15px;font-weight:750;cursor:pointer}.nav-btn:hover,.nav-btn.active{background:rgba(255,255,255,.11)}
+    .sidebar-note{margin-top:22px;padding:12px;border:1px solid rgba(255,255,255,.12);border-radius:10px;color:#cbd5e1;font-size:11px;line-height:1.55}.main{margin-left:252px;width:calc(100% - 252px);padding:36px 42px 60px;max-width:1650px}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#1e3a8a 58%,#2563eb 100%);padding:30px 32px;border-radius:18px;color:white;margin-bottom:22px;box-shadow:0 12px 30px rgba(30,58,138,.18)}.hero .eyebrow{font-size:12px;letter-spacing:1.7px;font-weight:850;color:#93c5fd}.hero h1{margin:5px 0 7px;font-size:31px}.hero p{margin:0;color:#dbeafe}.status-pill{display:inline-block;margin-top:13px;padding:5px 10px;border-radius:999px;background:rgba(34,197,94,.18);border:1px solid rgba(134,239,172,.45);color:#dcfce7;font-size:12px;font-weight:800}
+    .section{display:none}.section.active{display:block}.section-title{font-size:28px;font-weight:900;margin:0 0 8px}.section-desc{color:var(--slate);margin:0 0 24px}.grid{display:grid;gap:16px}.grid-4{grid-template-columns:repeat(4,minmax(0,1fr))}.grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}.grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:0 4px 14px rgba(15,23,42,.05)}.metric{border-top:4px solid var(--blue)}.metric-label{font-size:13px;color:var(--slate);font-weight:800;margin-bottom:8px}.metric-value{font-size:28px;font-weight:900}.metric-delta{font-size:12px;color:var(--slate);margin-top:6px}.notice{border-left:5px solid var(--blue2)}.notice .date{font-size:12px;color:var(--slate);margin-bottom:7px}
+    .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:18px}select,button.action,a.action{border:1px solid #cbd5e1;border-radius:9px;padding:10px 12px;background:#fff;color:var(--navy);font-size:14px;font-weight:750;text-decoration:none}button.action,a.action{cursor:pointer}.primary{background:var(--blue)!important;border-color:var(--blue)!important;color:#fff!important}
+    .table-wrap{overflow:auto;border-radius:12px;border:1px solid var(--line);background:#fff;max-height:620px}table{border-collapse:collapse;width:100%;min-width:780px}th,td{padding:11px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;font-size:13px;line-height:1.45}th{background:var(--soft);color:#475569;font-weight:900;position:sticky;top:0;z-index:1}tr:last-child td{border-bottom:0}
+    .video-box{aspect-ratio:16/9;background:#000;border-radius:12px;overflow:hidden}.video-box iframe{width:100%;height:100%;border:0}.chart-card{height:395px}.chart-card canvas{max-height:325px}.small{font-size:12px;color:var(--slate)}.warn{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;padding:10px 12px;border-radius:10px;font-size:13px;margin-bottom:16px}.loading{padding:24px;text-align:center;color:var(--slate)}
+    .footer{color:#94a3b8;font-size:11px;margin-top:26px;text-align:center}.education-groups{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}.edu-group{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px}.edu-group h4{margin:0 0 8px}.edu-chip{display:inline-block;padding:6px 9px;margin:3px;border-radius:999px;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:12px;cursor:pointer}
+    @media(max-width:1100px){.grid-4{grid-template-columns:repeat(2,minmax(0,1fr))}.grid-3,.grid-2,.education-groups{grid-template-columns:1fr}}
+    @media(max-width:760px){.sidebar{position:static;width:100%;height:auto}.app{display:block}.main{margin-left:0;width:100%;padding:22px 16px 40px}.grid-4{grid-template-columns:1fr}.nav-btn{display:inline-flex;width:auto;margin-right:4px}.sidebar-note{display:none}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">💠 RKG 함안센터</div>
+    <div class="brand-sub">HTML Dashboard</div>
+    <button class="nav-btn active" data-target="home">🏠 홈</button>
+    <button class="nav-btn" data-target="kpi">📊 KPI</button>
+    <button class="nav-btn" data-target="safety">🦺 Safety / APW</button>
+    <button class="nav-btn" data-target="edu">🎓 안전 교육</button>
+    <button class="nav-btn" data-target="tbm">👷 TBM</button>
+    <button class="nav-btn" data-target="sales">📦 운영 실적</button>
+    <div class="sidebar-note">현재 HTML 버전은 조회 전용입니다.<br>데이터는 기존 GitHub 저장소의 CSV를 읽어 표시합니다.</div>
+    <div class="footer">ⓒ 2026 Samwoo F&G RKG Haman Center.</div>
+  </aside>
+
+  <main class="main">
+    <section id="home" class="section active">
+      <div class="hero">
+        <div class="eyebrow">SAMWOO F&G · RKG HAMAN CENTER</div>
+        <h1>함안센터 통합관리 시스템</h1>
+        <p>운영실적 · KPI · Safety/APW · TBM · 안전교육 통합 조회</p>
+        <span class="status-pill">● GitHub 데이터 자동연동</span>
+      </div>
+      <div class="warn">HTML 조회용 버전입니다. 기존 Streamlit 홈페이지는 별도로 그대로 운영됩니다.</div>
+      <div id="homeMetrics" class="grid grid-4"><div class="loading">데이터 불러오는 중...</div></div>
+      <h3 style="margin-top:26px">📢 최근 공지</h3>
+      <div id="latestNotice" class="card notice">불러오는 중...</div>
+    </section>
+
+    <section id="kpi" class="section">
+      <h2 class="section-title">📊 월별 KPI</h2><p class="section-desc">기존 GitHub의 KPI 데이터를 실시간으로 조회합니다.</p>
+      <div class="toolbar"><label><b>지표 선택</b></label><select id="kpiMetric"></select><button class="action" onclick="loadAll()">🔄 새로고침</button></div>
+      <div class="grid grid-2"><div class="card chart-card"><canvas id="kpiChart"></canvas></div><div class="card"><div class="table-wrap"><table id="kpiTable"></table></div></div></div>
+    </section>
+
+    <section id="safety" class="section">
+      <h2 class="section-title">🦺 Safety / APW 현황</h2><p class="section-desc">무재해 일수와 TBM 누적 현황을 확인합니다.</p>
+      <div id="safetyMetrics" class="grid grid-3"></div><h3 style="margin-top:26px">최근 TBM</h3><div class="table-wrap"><table id="recentTbmTable"></table></div>
+    </section>
+
+    <section id="edu" class="section">
+      <h2 class="section-title">🎓 안전 교육</h2><p class="section-desc">월별 정기교육과 특별·수시교육을 자유롭게 선택해 다시 볼 수 있습니다.</p>
+      <div id="educationGroups" class="education-groups"></div>
+      <div class="toolbar"><label><b>교육 영상 선택</b></label><select id="eduSelect"></select><a class="action primary" href="https://youtube.com/channel/UCgDB-bTxbPZN32iF-HoResw?si=6WvSruLEY4uOoEoM" target="_blank" rel="noopener">📺 전체 유튜브 채널</a></div>
+      <div class="grid grid-2"><div class="card"><h3 id="eduTitle" style="margin-top:0">교육 영상</h3><div class="video-box"><iframe id="eduVideo" allowfullscreen></iframe></div></div><div class="card"><h3 style="margin-top:0">📝 교육 이수 확인</h3><div id="eduFormArea"></div></div></div>
+    </section>
+
+    <section id="tbm" class="section">
+      <h2 class="section-title">👷 TBM (작업 전 안전점검) Log</h2><p class="section-desc">현장 TBM 실시 이력 통합 조회</p>
+      <div id="tbmMetrics" class="grid grid-3"></div><h3 style="margin-top:26px">📑 TBM 누적 이력 목록</h3><div class="table-wrap"><table id="tbmTable"></table></div>
+    </section>
+
+    <section id="sales" class="section">
+      <h2 class="section-title">📦 센터 운영 및 실적 현황</h2><p class="section-desc">월별 매출 및 O/B · I/B · BMPR 물동량을 조회합니다.</p>
+      <div class="toolbar"><label><b>연월 선택</b></label><select id="salesMonth"></select><button class="action" onclick="loadAll()">🔄 새로고침</button></div>
+      <div id="salesMetrics" class="grid grid-4"></div><div class="grid grid-2" style="margin-top:18px"><div class="card chart-card"><canvas id="salesChart"></canvas></div><div class="card chart-card"><canvas id="volumeChart"></canvas></div></div>
+    </section>
+  </main>
+</div>
+
+<script>
+const RAW_BASE = 'https://raw.githubusercontent.com/jongil3877-lgtm/haman-dashboard/main/';
+const FILES = {kpi:'kpi_data.csv',sales:'sales_data.csv',tbm:'tbm_history.csv',edu:'edu_links.csv',notice:'notice_history.csv'};
+let DATA = {kpi:[],sales:[],tbm:[],edu:[],notice:[]};
+let charts = {kpi:null,sales:null,volume:null};
+
+document.querySelectorAll('.nav-btn').forEach(btn=>btn.addEventListener('click',()=>{
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  btn.classList.add('active'); document.getElementById(btn.dataset.target).classList.add('active');
+}));
+
+async function fetchCSV(name){
+  const response = await fetch(RAW_BASE + FILES[name] + '?t=' + Date.now(), {cache:'no-store'});
+  if(!response.ok) throw new Error(name + ' 데이터 로드 실패');
+  const text = await response.text();
+  const parsed = Papa.parse(text.replace(/^﻿/,''), {header:true, skipEmptyLines:true});
+  if(parsed.errors.length) console.warn(name, parsed.errors);
+  return parsed.data;
+}
+function num(v){ if(v===null||v===undefined||String(v).trim()==='') return null; const n=Number(String(v).replace(/,/g,'').trim()); return Number.isFinite(n)?n:null; }
+function fmt(v,d=0){ const n=num(v); return n===null?'-':n.toLocaleString('ko-KR',{minimumFractionDigits:d,maximumFractionDigits:d}); }
+function esc(s){ return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function card(label,value,delta=''){ return `<div class="card metric"><div class="metric-label">${label}</div><div class="metric-value">${value}</div>${delta?`<div class="metric-delta">${delta}</div>`:''}</div>`; }
+function tableHTML(rows,cols){ return '<thead><tr>'+cols.map(c=>`<th>${c.label}</th>`).join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+cols.map(c=>`<td>${c.render?c.render(r[c.key],r):esc(r[c.key])}</td>`).join('')+'</tr>').join('')+'</tbody>'; }
+function youtubeEmbed(url){ if(!url) return ''; try{const u=new URL(url); const id=u.hostname.includes('youtu.be')?u.pathname.replace('/',''):u.searchParams.get('v'); return id?'https://www.youtube.com/embed/'+id:url;}catch(e){return url;} }
+
+function renderHome(){
+  const k=DATA.kpi.filter(r=>Object.values(r).some(v=>String(v).trim()!=='')).slice(-1)[0]||{};
+  const s=DATA.sales.filter(r=>['매출(만원)','O/B','I/B','BMPR'].some(c=>num(r[c])!==null)).slice(-1)[0]||{};
+  const days=Math.floor((new Date()-new Date('2026-01-01T00:00:00'))/86400000)+1;
+  document.getElementById('homeMetrics').innerHTML=card('무재해 달성',days+'일','2026-01-01 기준')+card('누적 TBM',DATA.tbm.length+'회','지속 누적')+card('최근 KPI',esc(k['월']||'-'),'클레임 '+fmt(k['클레임'],2))+card('최근 매출',fmt(s['매출(만원)'])+'만원',esc(s['연월']||'-'));
+  const n=DATA.notice[0]; document.getElementById('latestNotice').innerHTML=n?`<div class="date">${esc(n['등록일자'])} · ${esc(n['작성자'])}</div><div>${esc(n['공지내용'])}</div>`:'등록된 공지가 없습니다.';
+}
+function renderKpi(){
+  if(!DATA.kpi.length) return; const cols=Object.keys(DATA.kpi[0]).filter(x=>x!=='월'); const sel=document.getElementById('kpiMetric'); const prev=sel.value; sel.innerHTML=cols.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join(''); if(cols.includes(prev)) sel.value=prev; sel.onchange=drawKpi; drawKpi();
+}
+function drawKpi(){
+  const metric=document.getElementById('kpiMetric').value||'클레임'; document.getElementById('kpiTable').innerHTML=tableHTML(DATA.kpi,[{key:'월',label:'월'},{key:metric,label:metric,render:v=>fmt(v,metric==='클레임'?2:1)}]);
+  if(charts.kpi) charts.kpi.destroy(); charts.kpi=new Chart(document.getElementById('kpiChart'),{type:'line',data:{labels:DATA.kpi.map(r=>r['월']),datasets:[{label:metric,data:DATA.kpi.map(r=>num(r[metric])),tension:.25,pointRadius:4}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:false}}}});
+}
+function renderSafety(){
+  const days=Math.floor((new Date()-new Date('2026-01-01T00:00:00'))/86400000)+1; const sorted=[...DATA.tbm].sort((a,b)=>String(b['실시일자']).localeCompare(String(a['실시일자'])));
+  document.getElementById('safetyMetrics').innerHTML=card('무재해 달성',days+'일','목표 365일')+card('누적 TBM',DATA.tbm.length+'회','지속 누적')+card('APW 진단','3.43 Level','T/G 3.0 초과');
+  document.getElementById('recentTbmTable').innerHTML=tableHTML(sorted.slice(0,8),[{key:'실시일자',label:'실시일자'},{key:'구분',label:'구분'},{key:'중점 점검 주제',label:'중점 점검 주제',render:v=>esc(v).slice(0,240)+(String(v||'').length>240?'…':'')},{key:'점검 리더',label:'점검 리더'},{key:'확인자',label:'확인자'}]);
+}
+function renderEdu(){
+  const sel=document.getElementById('eduSelect'); sel.innerHTML=DATA.edu.map((r,i)=>`<option value="${i}">${esc(r['월'])}</option>`).join(''); sel.onchange=renderEduCurrent;
+  const monthly=DATA.edu.map((r,i)=>({r,i})).filter(x=>/^d+월$/.test(x.r['월']||'')); const special=DATA.edu.map((r,i)=>({r,i})).filter(x=>!/^d+월$/.test(x.r['월']||''));
+  const chips = arr=>arr.map(x=>`<button class="edu-chip" onclick="document.getElementById('eduSelect').value='${x.i}';renderEduCurrent();">${esc(x.r['월'])}</button>`).join('');
+  document.getElementById('educationGroups').innerHTML=`<div class="edu-group"><h4>① 월별 정기 안전보건교육</h4>${chips(monthly)}</div><div class="edu-group"><h4>② 특별·수시 안전교육</h4>${chips(special)}</div>`; renderEduCurrent();
+}
+function renderEduCurrent(){
+  const sel=document.getElementById('eduSelect'), r=DATA.edu[Number(sel.value||0)]||{}; document.getElementById('eduTitle').textContent='📌 '+(r['월']||'')+' 안전교육 영상'; document.getElementById('eduVideo').src=youtubeEmbed(r['유튜브_주소']||''); const form=(r['구글폼_주소']||'').trim(); document.getElementById('eduFormArea').innerHTML=form?`<p>영상을 시청한 후 아래 버튼을 통해 이수 확인을 진행하세요.</p><a class="action primary" href="${esc(form)}" target="_blank" rel="noopener">👉 교육 이수확인 바로가기</a>`:'<p class="small">본 교육은 별도 구글폼이 없습니다. 현장 오프라인 서명부 또는 별도 확인 방식으로 이수를 관리합니다.</p>';
+}
+function renderTbm(){
+  const sorted=[...DATA.tbm].sort((a,b)=>String(b['실시일자']).localeCompare(String(a['실시일자']))); document.getElementById('tbmMetrics').innerHTML=card('총 TBM 실시 횟수',DATA.tbm.length+'회')+card('가장 최근 실시일',esc(sorted[0]?.['실시일자']||'-'))+card('책임 점검 리더','신종일 부장'); document.getElementById('tbmTable').innerHTML=tableHTML(sorted,[{key:'실시일자',label:'실시일자'},{key:'구분',label:'구분'},{key:'중점 점검 주제',label:'중점 점검 주제'},{key:'점검 리더',label:'점검 리더'},{key:'확인자',label:'확인자'}]);
+}
+function renderSales(){
+  const valid=DATA.sales.filter(r=>['매출(만원)','O/B','I/B','BMPR'].some(c=>num(r[c])!==null)); const months=DATA.sales.map(r=>r['연월']).filter(Boolean).sort().reverse(); const sel=document.getElementById('salesMonth'); const prev=sel.value; sel.innerHTML=months.map(m=>`<option value="${esc(m)}">${esc(m)}</option>`).join(''); if(months.includes(prev)) sel.value=prev; else if(valid.length) sel.value=valid[valid.length-1]['연월']; sel.onchange=renderSalesCurrent; renderSalesCurrent();
+  if(charts.sales) charts.sales.destroy(); charts.sales=new Chart(document.getElementById('salesChart'),{type:'bar',data:{labels:valid.map(r=>r['연월']),datasets:[{label:'매출(만원)',data:valid.map(r=>num(r['매출(만원)']))}]},options:{responsive:true,maintainAspectRatio:false,plugins:{title:{display:true,text:'월별 매출 추이'}},scales:{x:{ticks:{maxRotation:60,minRotation:60}}}}});
+  if(charts.volume) charts.volume.destroy(); charts.volume=new Chart(document.getElementById('volumeChart'),{type:'line',data:{labels:valid.map(r=>r['연월']),datasets:[{label:'O/B',data:valid.map(r=>num(r['O/B'])),tension:.2},{label:'I/B',data:valid.map(r=>num(r['I/B'])),tension:.2},{label:'BMPR',data:valid.map(r=>num(r['BMPR'])),tension:.2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{title:{display:true,text:'물동량 추이'}},scales:{x:{ticks:{maxRotation:60,minRotation:60}}}}});
+}
+function renderSalesCurrent(){ const ym=document.getElementById('salesMonth').value; const r=DATA.sales.find(x=>x['연월']===ym)||{}; document.getElementById('salesMetrics').innerHTML=card('💰 총 매출',fmt(r['매출(만원)'])+'만원')+card('📤 O/B 물동량',fmt(r['O/B'],1)+' CBM')+card('📥 I/B 물동량',fmt(r['I/B'],1)+' CBM')+card('🚘 BMPR 물동량',fmt(r['BMPR'])+' QTY'); }
+
+async function loadAll(){
+  try{ const [kpi,sales,tbm,edu,notice]=await Promise.all(['kpi','sales','tbm','edu','notice'].map(fetchCSV)); DATA={kpi,sales,tbm,edu,notice}; renderHome(); renderKpi(); renderSafety(); renderEdu(); renderTbm(); renderSales(); }
+  catch(e){ console.error(e); alert('데이터를 불러오지 못했습니다.\n'+e.message); }
+}
+loadAll();
+</script>
+</body>
+</html>
