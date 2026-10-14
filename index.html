@@ -31,9 +31,8 @@
     <div class="brand-sub">HTML Dashboard</div>
     <button class="nav-btn active" data-target="home">🏠 홈</button>
     <button class="nav-btn" data-target="kpi">📊 KPI</button>
-    <button class="nav-btn" data-target="safety">🦺 Safety / APW</button>
+    <button class="nav-btn" data-target="safety">🦺 Safety / APW · TBM</button>
     <button class="nav-btn" data-target="edu">🎓 안전 교육</button>
-    <button class="nav-btn" data-target="tbm">👷 TBM</button>
     <button class="nav-btn" data-target="sales">📦 운영 실적</button>
     <div class="sidebar-note">현재 HTML 버전은 조회 전용입니다.<br>데이터는 기존 GitHub 저장소의 CSV를 읽어 표시합니다.</div>
     <div class="footer">ⓒ 2026 Samwoo F&G RKG Haman Center.</div>
@@ -60,8 +59,10 @@
     </section>
 
     <section id="safety" class="section">
-      <h2 class="section-title">🦺 Safety / APW 현황</h2><p class="section-desc">무재해 일수와 TBM 누적 현황을 확인합니다.</p>
-      <div id="safetyMetrics" class="grid grid-3"></div><h3 style="margin-top:26px">최근 TBM</h3><div class="table-wrap"><table id="recentTbmTable"></table></div>
+      <h2 class="section-title">🦺 Safety / APW · TBM 통합 안전관리</h2><p class="section-desc">무재해 · APW · TBM 현황과 전체 TBM 이력을 한 화면에서 확인합니다.</p>
+      <div id="safetyMetrics" class="grid grid-3"></div>
+      <h3 style="margin-top:26px">📌 최근 TBM</h3><div class="table-wrap"><table id="recentTbmTable"></table></div>
+      <h3 style="margin-top:26px">📑 TBM 전체 누적 이력</h3><div class="table-wrap"><table id="allTbmTable"></table></div>
     </section>
 
     <section id="edu" class="section">
@@ -69,11 +70,6 @@
       <div id="educationGroups" class="education-groups"></div>
       <div class="toolbar"><label><b>교육 영상 선택</b></label><select id="eduSelect"></select><a class="action primary" href="https://youtube.com/channel/UCgDB-bTxbPZN32iF-HoResw?si=6WvSruLEY4uOoEoM" target="_blank" rel="noopener">📺 전체 유튜브 채널</a></div>
       <div class="grid grid-2"><div class="card"><h3 id="eduTitle" style="margin-top:0">교육 영상</h3><div class="video-box"><iframe id="eduVideo" allowfullscreen></iframe></div></div><div class="card"><h3 style="margin-top:0">📝 교육 이수 확인</h3><div id="eduFormArea"></div></div></div>
-    </section>
-
-    <section id="tbm" class="section">
-      <h2 class="section-title">👷 TBM (작업 전 안전점검) Log</h2><p class="section-desc">현장 TBM 실시 이력 통합 조회</p>
-      <div id="tbmMetrics" class="grid grid-3"></div><h3 style="margin-top:26px">📑 TBM 누적 이력 목록</h3><div class="table-wrap"><table id="tbmTable"></table></div>
     </section>
 
     <section id="sales" class="section">
@@ -127,8 +123,11 @@ function drawKpi(){
 }
 function renderSafety(){
   const days=Math.floor((new Date()-new Date('2026-01-01T00:00:00'))/86400000)+1; const sorted=[...DATA.tbm].sort((a,b)=>String(b['실시일자']).localeCompare(String(a['실시일자'])));
-  document.getElementById('safetyMetrics').innerHTML=card('무재해 달성',days+'일','목표 365일')+card('누적 TBM',DATA.tbm.length+'회','지속 누적')+card('APW 진단','3.43 Level','T/G 3.0 초과');
-  document.getElementById('recentTbmTable').innerHTML=tableHTML(sorted.slice(0,8),[{key:'실시일자',label:'실시일자'},{key:'구분',label:'구분'},{key:'중점 점검 주제',label:'중점 점검 주제',render:v=>esc(v).slice(0,240)+(String(v||'').length>240?'…':'')},{key:'점검 리더',label:'점검 리더'},{key:'확인자',label:'확인자'}]);
+  document.getElementById('safetyMetrics').innerHTML=card('무재해 달성',days+'일','목표 365일')+card('누적 TBM',DATA.tbm.length+'회','최근 실시: '+(sorted[0]?.['실시일자']||'-'))+card('APW 진단','3.43 Level','T/G 3.0 초과');
+  const cols=[{key:'실시일자',label:'실시일자'},{key:'구분',label:'구분'},{key:'중점 점검 주제',label:'중점 점검 주제',render:v=>esc(v)},{key:'점검 리더',label:'점검 리더'},{key:'확인자',label:'확인자'}];
+  const recentCols=[{key:'실시일자',label:'실시일자'},{key:'구분',label:'구분'},{key:'중점 점검 주제',label:'중점 점검 주제',render:v=>esc(v).slice(0,240)+(String(v||'').length>240?'…':'')},{key:'점검 리더',label:'점검 리더'},{key:'확인자',label:'확인자'}];
+  document.getElementById('recentTbmTable').innerHTML=tableHTML(sorted.slice(0,5),recentCols);
+  document.getElementById('allTbmTable').innerHTML=tableHTML(sorted,cols);
 }
 function renderEdu(){
   const sel=document.getElementById('eduSelect'); sel.innerHTML=DATA.edu.map((r,i)=>`<option value="${i}">${esc(r['월'])}</option>`).join(''); sel.onchange=renderEduCurrent;
@@ -139,9 +138,6 @@ function renderEdu(){
 function renderEduCurrent(){
   const sel=document.getElementById('eduSelect'), r=DATA.edu[Number(sel.value||0)]||{}; document.getElementById('eduTitle').textContent='📌 '+(r['월']||'')+' 안전교육 영상'; document.getElementById('eduVideo').src=youtubeEmbed(r['유튜브_주소']||''); const form=(r['구글폼_주소']||'').trim(); document.getElementById('eduFormArea').innerHTML=form?`<p>영상을 시청한 후 아래 버튼을 통해 이수 확인을 진행하세요.</p><a class="action primary" href="${esc(form)}" target="_blank" rel="noopener">👉 교육 이수확인 바로가기</a>`:'<p class="small">본 교육은 별도 구글폼이 없습니다. 현장 오프라인 서명부 또는 별도 확인 방식으로 이수를 관리합니다.</p>';
 }
-function renderTbm(){
-  const sorted=[...DATA.tbm].sort((a,b)=>String(b['실시일자']).localeCompare(String(a['실시일자']))); document.getElementById('tbmMetrics').innerHTML=card('총 TBM 실시 횟수',DATA.tbm.length+'회')+card('가장 최근 실시일',esc(sorted[0]?.['실시일자']||'-'))+card('책임 점검 리더','신종일 부장'); document.getElementById('tbmTable').innerHTML=tableHTML(sorted,[{key:'실시일자',label:'실시일자'},{key:'구분',label:'구분'},{key:'중점 점검 주제',label:'중점 점검 주제'},{key:'점검 리더',label:'점검 리더'},{key:'확인자',label:'확인자'}]);
-}
 function renderSales(){
   const valid=DATA.sales.filter(r=>['매출(만원)','O/B','I/B','BMPR'].some(c=>num(r[c])!==null)); const months=valid.map(r=>r['연월']).filter(Boolean).sort().reverse(); const sel=document.getElementById('salesMonth'); const prev=sel.value; sel.innerHTML=months.map(m=>`<option value="${esc(m)}">${esc(m)}</option>`).join(''); if(months.includes(prev)) sel.value=prev; else if(valid.length) sel.value=valid[valid.length-1]['연월']; sel.onchange=renderSalesCurrent; renderSalesCurrent();
   if(charts.sales) charts.sales.destroy(); charts.sales=new Chart(document.getElementById('salesChart'),{type:'bar',data:{labels:valid.map(r=>r['연월']),datasets:[{label:'매출(만원)',data:valid.map(r=>num(r['매출(만원)']))}]},options:{responsive:true,maintainAspectRatio:false,plugins:{title:{display:true,text:'월별 매출 추이'}},scales:{x:{ticks:{maxRotation:60,minRotation:60}}}}});
@@ -150,7 +146,7 @@ function renderSales(){
 function renderSalesCurrent(){ const ym=document.getElementById('salesMonth').value; const r=DATA.sales.find(x=>x['연월']===ym)||{}; document.getElementById('salesMetrics').innerHTML=card('💰 총 매출',fmt(r['매출(만원)'])+'만원')+card('📤 O/B 물동량',fmt(r['O/B'],1)+' CBM')+card('📥 I/B 물동량',fmt(r['I/B'],1)+' CBM')+card('🚘 BMPR 물동량',fmt(r['BMPR'])+' QTY'); }
 
 async function loadAll(){
-  try{ const [kpi,sales,tbm,edu,notice]=await Promise.all(['kpi','sales','tbm','edu','notice'].map(fetchCSV)); DATA={kpi,sales,tbm,edu,notice}; renderHome(); renderKpi(); renderSafety(); renderEdu(); renderTbm(); renderSales(); }
+  try{ const [kpi,sales,tbm,edu,notice]=await Promise.all(['kpi','sales','tbm','edu','notice'].map(fetchCSV)); DATA={kpi,sales,tbm,edu,notice}; renderHome(); renderKpi(); renderSafety(); renderEdu(); renderSales(); }
   catch(e){ console.error(e); alert('데이터를 불러오지 못했습니다.\n'+e.message); }
 }
 loadAll();
